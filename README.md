@@ -19,12 +19,12 @@ wch kubectl get pods
 
 ## Overview
 
-wch runs a command periodically and displays the output in a scrollable terminal UI. Changed lines are highlighted using character-level diff, making it easy to spot what changed between executions. Optionally triggers desktop notifications when output changes.
+wch runs a command periodically and displays the output in a scrollable terminal UI. Changed lines are highlighted using character-level diff, making it easy to spot what changed between executions.
 
 ## Features
 
 - Character-level diff highlighting between executions
-- Desktop notifications on output change (via terminal bell)
+- Terminal notifications on output change (OSC 9, supported by iTerm2 and others)
 - Vim-style navigation (hjkl, g/G, pgup/pgdown)
 - Pause/resume execution
 - Toggleable status bar and diff highlighting
@@ -40,7 +40,7 @@ Download from [Releases](https://github.com/ivoronin/wch/releases).
 ### Homebrew
 
 ```bash
-brew install ivoronin/tap/wch
+brew install ivoronin/ivoronin/wch
 ```
 
 ## Usage
