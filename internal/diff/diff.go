@@ -23,19 +23,16 @@ func New() *Highlighter {
 	}
 }
 
-// Highlight returns the new text with changed characters highlighted
-// Returns the highlighted text and whether there were any changes
-func (h *Highlighter) Highlight(oldText, newText string) (string, bool) {
+// Highlight returns the new text with changed characters highlighted.
+func (h *Highlighter) Highlight(oldText, newText string) string {
 	if oldText == newText {
-		return newText, false
+		return newText
 	}
 
 	oldLines := strings.Split(oldText, "\n")
 	newLines := strings.Split(newText, "\n")
 
 	var result strings.Builder
-	hasChanges := false
-
 	for i, newLine := range newLines {
 		if i > 0 {
 			result.WriteString("\n")
@@ -48,15 +45,12 @@ func (h *Highlighter) Highlight(oldText, newText string) (string, bool) {
 
 		if oldLine == newLine {
 			result.WriteString(newLine)
-			continue
+		} else {
+			result.WriteString(h.highlightLine(oldLine, newLine))
 		}
-
-		hasChanges = true
-		highlighted := h.highlightLine(oldLine, newLine)
-		result.WriteString(highlighted)
 	}
 
-	return result.String(), hasChanges
+	return result.String()
 }
 
 // highlightLine highlights character-level differences in a single line

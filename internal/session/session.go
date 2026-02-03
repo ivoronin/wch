@@ -38,18 +38,24 @@ func NewSession(command string, interval time.Duration) *Session {
 	}
 }
 
-// AddExecution adds an execution to history
-func (s *Session) AddExecution(exec Execution) {
+// RecordIfChanged adds an execution to history only if output changed.
+// Returns true if recorded, false if skipped (no change).
+func (s *Session) RecordIfChanged(exec Execution) bool {
+	// Always add first execution
+	if len(s.History) == 0 {
+		s.History = append(s.History, exec)
+		return true
+	}
+
+	// Only add if output changed
+	last := s.History[len(s.History)-1]
+	if exec.Output() == last.Output() {
+		return false // No change, don't store
+	}
+
 	s.History = append(s.History, exec)
 	if s.MaxHistory > 0 && len(s.History) > s.MaxHistory {
 		s.History = s.History[1:]
 	}
-}
-
-// LastExecution returns the most recent execution, or nil if none
-func (s *Session) LastExecution() *Execution {
-	if len(s.History) == 0 {
-		return nil
-	}
-	return &s.History[len(s.History)-1]
+	return true
 }
