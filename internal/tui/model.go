@@ -56,15 +56,15 @@ func New(cfg Config) Model {
 	sess.MaxHistory = defaultMaxHistory
 
 	return Model{
-		session:    sess,
-		runner:     runner.New(cfg.Command),
-		differ:     diff.New(),
+		session:      sess,
+		runner:       runner.New(cfg.Command),
+		differ:       diff.New(),
 		viewport:     scrollview.NewScrollview(0, 0),
 		historyIndex: -1,
-		mode:       viewMode,
-		diff:       cfg.DiffEnabled,
-		statusBar:  cfg.ShowStatus,
-		notify:     cfg.NotifyOnChange,
+		mode:         viewMode,
+		diff:         cfg.DiffEnabled,
+		statusBar:    cfg.ShowStatus,
+		notify:       cfg.NotifyOnChange,
 	}
 }
 

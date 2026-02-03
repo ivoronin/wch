@@ -229,4 +229,3 @@ func (v *Scrollview) SetShowScrollbar(show bool) {
 	v.showBar = show
 	v.updateLayout()
 }
-
