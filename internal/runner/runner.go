@@ -9,6 +9,8 @@ import (
 	"github.com/ivoronin/wch/internal/session"
 )
 
+const errorExitCode = -1 // Used when error is not an ExitError
+
 // Runner executes commands
 type Runner struct {
 	command string
@@ -42,7 +44,7 @@ func (r *Runner) Execute(ctx context.Context) session.Execution {
 		if exitErr, ok := err.(*exec.ExitError); ok {
 			result.ExitCode = exitErr.ExitCode()
 		} else {
-			result.ExitCode = -1
+			result.ExitCode = errorExitCode
 		}
 	}
 
