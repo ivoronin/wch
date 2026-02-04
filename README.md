@@ -59,29 +59,6 @@ wch -t kubectl get pods                 # hide status bar
 wch -b kubectl get pods                 # disable notifications
 ```
 
-### Keyboard Controls
-
-| Key | Action |
-|-----|--------|
-| `q`, `Ctrl+C` | Quit |
-| `j`/`k`, `↑`/`↓` | Scroll up/down |
-| `h`/`l`, `←`/`→` | Scroll left/right |
-| `g`/`G`, `Home`/`End` | Go to top/bottom |
-| `PgUp`/`PgDown` | Page up/down |
-| `d` | Toggle diff highlighting |
-| `t` | Toggle status bar |
-| `p` | Pause/resume |
-| `b` | Enter history browser |
-
-### History Browser
-
-| Key | Action |
-|-----|--------|
-| `h`/`l`, `←`/`→` | Navigate timeline |
-| `g`/`G`, `Home`/`End` | Jump to oldest/newest |
-| `Enter`, `b` | Exit browser, stay on selected |
-| `Esc` | Exit browser, return to latest |
-
 ## Configuration
 
 ### Flags
