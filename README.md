@@ -1,6 +1,6 @@
 # wch
 
-Yet another watch(1) clone
+Watch command output with history you can rewind
 
 [![CI](https://github.com/ivoronin/wch/actions/workflows/test.yml/badge.svg)](https://github.com/ivoronin/wch/actions/workflows/test.yml)
 [![Release](https://img.shields.io/github/v/release/ivoronin/wch)](https://github.com/ivoronin/wch/releases)
@@ -21,8 +21,11 @@ wch kubectl get pods
 
 wch runs a command periodically and displays the output in a scrollable terminal UI. Changed lines are highlighted using character-level diff, making it easy to spot what changed between executions.
 
+Press `b` to enter history browser and navigate through up to 1000 past executions using a timeline picker. Only executions where output actually changed are recorded, so you get meaningful history without noise.
+
 ## Features
 
+- History browser stores up to 1000 executions, navigate with arrow keys or h/l
 - Character-level diff highlighting between executions
 - Terminal notifications on output change (OSC 9, supported by iTerm2 and others)
 - Vim-style navigation (hjkl, g/G, pgup/pgdown)
@@ -67,6 +70,16 @@ wch -b kubectl get pods                 # disable notifications
 | `d` | Toggle diff highlighting |
 | `t` | Toggle status bar |
 | `p` | Pause/resume |
+| `b` | Enter history browser |
+
+### History Browser
+
+| Key | Action |
+|-----|--------|
+| `h`/`l`, `←`/`→` | Navigate timeline |
+| `g`/`G`, `Home`/`End` | Jump to oldest/newest |
+| `Enter`, `b` | Exit browser, stay on selected |
+| `Esc` | Exit browser, return to latest |
 
 ## Configuration
 
