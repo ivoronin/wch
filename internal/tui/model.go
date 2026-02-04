@@ -178,7 +178,10 @@ func (m Model) handleResize(msg tea.WindowSizeMsg) (Model, tea.Cmd) {
 	m.width = msg.Width
 	m.height = msg.Height
 	m.ready = true
-	return m.withResizedScrollview(), nil
+	// ClearScreen forces a full terminal redraw, preventing visual artifacts
+	// in terminal multiplexers like Zellij that don't handle Bubble Tea's
+	// differential rendering correctly on resize.
+	return m.withResizedScrollview(), tea.ClearScreen
 }
 
 // handleExecResult processes command execution results.
