@@ -1,6 +1,9 @@
 package tui
 
-import "github.com/charmbracelet/lipgloss"
+import (
+	"github.com/charmbracelet/lipgloss"
+	"github.com/charmbracelet/x/ansi"
+)
 
 // threeColumnLayout holds computed widths for a three-section horizontal layout.
 type threeColumnLayout struct {
@@ -22,11 +25,15 @@ func calcThreeColumnLayout(totalWidth, centerWidth int) threeColumnLayout {
 }
 
 // renderLeft renders content left-aligned within the given width.
+// Content is truncated with ellipsis if it exceeds the available width.
 func renderLeft(content string, width int) string {
+	content = ansi.Truncate(content, width, "…")
 	return lipgloss.NewStyle().Width(width).Render(content)
 }
 
 // renderRight renders content right-aligned within the given width.
+// Content is truncated with ellipsis if it exceeds the available width.
 func renderRight(content string, width int) string {
+	content = ansi.Truncate(content, width, "…")
 	return lipgloss.NewStyle().Width(width).Align(lipgloss.Right).Render(content)
 }
