@@ -19,12 +19,13 @@ wch kubectl get pods
 
 ## Overview
 
-wch runs a command periodically and displays the output in a scrollable terminal UI. Changed lines are highlighted using character-level diff, making it easy to spot what changed between executions.
+wch runs a command periodically and displays the output in a scrollable terminal UI. Unlike standard `watch(1)`, you can scroll through the output when it exceeds the terminal height. Changed lines are highlighted using character-level diff, making it easy to spot what changed between executions.
 
 Press `b` to enter history browser and navigate through up to 1000 past executions using a timeline picker. Only executions where output actually changed are recorded, so you get meaningful history without noise.
 
 ## Features
 
+- Scrollable view for output that exceeds terminal height (unlike `watch(1)`)
 - History browser stores up to 1000 executions, navigate with arrow keys or h/l
 - Character-level diff highlighting between executions
 - Terminal notifications on output change (OSC 9, supported by iTerm2 and others)
