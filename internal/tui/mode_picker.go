@@ -5,7 +5,7 @@ import (
 
 	"github.com/charmbracelet/bubbles/key"
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss" // used for Width() in layout calculation
+	"github.com/charmbracelet/lipgloss"
 )
 
 // timestampLen is the display width of a formatted timestamp

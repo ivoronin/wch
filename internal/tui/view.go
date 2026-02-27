@@ -5,6 +5,7 @@ import (
 
 	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/charmbracelet/x/ansi"
 )
 
 // Constants are defined in styles.go
@@ -45,7 +46,8 @@ func (m Model) renderStatusBar() string {
 	leftWidth := (contentWidth - lipgloss.Width(timestamp)) / 2
 	rightWidth := contentWidth - leftWidth - lipgloss.Width(timestamp) - lipgloss.Width(indicator)
 
-	left := renderLeft(m.session.Command, leftWidth)
+	cmd := ansi.Truncate(m.session.Command, leftWidth-1, "…")
+	left := renderLeft(cmd, leftWidth)
 	right := renderRight(renderHelp(m.mode), rightWidth)
 	content := lipgloss.JoinHorizontal(lipgloss.Top, left, timestamp, indicator, right)
 
