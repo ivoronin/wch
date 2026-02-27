@@ -3,9 +3,9 @@ package tui
 import (
 	"strings"
 
-	"github.com/charmbracelet/bubbles/key"
-	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
+	"charm.land/bubbles/v2/key"
+	tea "charm.land/bubbletea/v2"
+	"charm.land/lipgloss/v2"
 )
 
 // timestampLen is the display width of a formatted timestamp
@@ -22,7 +22,7 @@ func (pickerModeType) ShortHelp() []key.Binding {
 	return nil
 }
 
-func (pickerModeType) HandleKey(msg tea.KeyMsg) tea.Msg {
+func (pickerModeType) HandleKey(msg tea.KeyPressMsg) tea.Msg {
 	switch {
 	case key.Matches(msg, pickerKeys.Confirm):
 		return switchModeMsg{mode: viewMode}

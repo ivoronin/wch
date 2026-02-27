@@ -1,8 +1,8 @@
 package tui
 
 import (
-	"github.com/charmbracelet/bubbles/key"
-	tea "github.com/charmbracelet/bubbletea"
+	"charm.land/bubbles/v2/key"
+	tea "charm.land/bubbletea/v2"
 )
 
 // Mode defines behavior for a UI interaction mode.
@@ -12,7 +12,7 @@ type Mode interface {
 
 	// HandleKey processes mode-specific input.
 	// Returns a message describing the action to take, or nil if unhandled.
-	HandleKey(msg tea.KeyMsg) tea.Msg
+	HandleKey(msg tea.KeyPressMsg) tea.Msg
 }
 
 // Message types are defined in messages.go
@@ -20,7 +20,7 @@ type Mode interface {
 
 // handleGlobalKey processes keys that work in all modes.
 // Returns a message describing the action to take, or nil if unhandled.
-func handleGlobalKey(msg tea.KeyMsg) tea.Msg {
+func handleGlobalKey(msg tea.KeyPressMsg) tea.Msg {
 	switch {
 	case key.Matches(msg, globalKeys.Quit):
 		return tea.QuitMsg{}

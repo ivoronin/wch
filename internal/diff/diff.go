@@ -3,7 +3,7 @@ package diff
 import (
 	"strings"
 
-	"github.com/charmbracelet/lipgloss"
+	"charm.land/lipgloss/v2"
 	difflib "github.com/sergi/go-diff/diffmatchpatch"
 )
 

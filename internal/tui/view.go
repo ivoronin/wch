@@ -3,35 +3,40 @@ package tui
 import (
 	"strings"
 
-	"github.com/charmbracelet/bubbles/key"
-	"github.com/charmbracelet/lipgloss"
+	"charm.land/bubbles/v2/key"
+	tea "charm.land/bubbletea/v2"
+	"charm.land/lipgloss/v2"
 	"github.com/charmbracelet/x/ansi"
 )
 
 // Constants are defined in styles.go
 
 // View renders the UI.
-func (m Model) View() string {
+func (m Model) View() tea.View {
+	var content string
 	if !m.ready {
-		return "Initializing..."
+		content = "Initializing..."
+	} else {
+		// Main content
+		content = m.viewport.View()
+
+		// Bottom bar: picker bar replaces status bar when in picker mode
+		var bottomBar string
+		if m.mode == pickerMode {
+			bottomBar = m.renderPickerBar()
+		} else if m.statusBar {
+			bottomBar = m.renderStatusBar()
+		}
+
+		if bottomBar != "" {
+			content += "\n" + bottomBar
+		}
 	}
 
-	// Main content
-	content := m.viewport.View()
-
-	// Bottom bar: picker bar replaces status bar when in picker mode
-	var bottomBar string
-	if m.mode == pickerMode {
-		bottomBar = m.renderPickerBar()
-	} else if m.statusBar {
-		bottomBar = m.renderStatusBar()
-	}
-
-	if bottomBar != "" {
-		content += "\n" + bottomBar
-	}
-
-	return content
+	v := tea.NewView(content)
+	v.AltScreen = true
+	v.WindowTitle = "wch: " + m.session.Command
+	return v
 }
 
 // renderStatusBar renders the bottom status bar.

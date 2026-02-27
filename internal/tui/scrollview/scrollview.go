@@ -3,8 +3,8 @@ package scrollview
 import (
 	"strings"
 
-	"github.com/charmbracelet/bubbles/viewport"
-	"github.com/charmbracelet/lipgloss"
+	"charm.land/bubbles/v2/viewport"
+	"charm.land/lipgloss/v2"
 )
 
 // Scrollbar symbols
@@ -23,12 +23,8 @@ var (
 
 // Scrollview wraps bubbles viewport with horizontal scrolling and scrollbar rendering.
 type Scrollview struct {
-	viewport.Model // embedded - navigation methods auto-promoted
+	viewport.Model // embedded - navigation and scroll methods auto-promoted
 
-	// XOffset tracks horizontal scroll position. We maintain this ourselves because
-	// bubbles viewport keeps xOffset private (no getter), unlike YOffset which is public.
-	// See: https://github.com/charmbracelet/bubbles/blob/master/viewport/viewport.go
-	XOffset     int
 	content     string   // raw content
 	lines       []string // cached split lines
 	maxWidth    int      // cached max line width
@@ -42,7 +38,7 @@ type Scrollview struct {
 // NewScrollview creates a new Scrollview with the given dimensions.
 func NewScrollview(width, height int) Scrollview {
 	v := Scrollview{
-		Model:       viewport.New(width, height),
+		Model:       viewport.New(viewport.WithWidth(width), viewport.WithHeight(height)),
 		showBar:     true,
 		totalWidth:  width,
 		totalHeight: height,
@@ -71,21 +67,16 @@ func (v *Scrollview) SetContent(content string) {
 	// Adjust height for horizontal scrollbar BEFORE setting content on Model
 	v.updateLayout()
 
-	yoff := v.YOffset
+	yoff := v.YOffset()
+	xoff := v.XOffset()
 	v.Model.SetContent(content)
 
 	// Preserve vertical scroll position (clamped)
-	ymax := max(0, v.TotalLineCount()-v.Height)
-	v.YOffset = min(yoff, ymax)
+	ymax := max(0, v.TotalLineCount()-v.Height())
+	v.Model.SetYOffset(min(yoff, ymax))
 
 	// Preserve horizontal scroll (clamped)
-	v.XOffset = min(v.XOffset, v.maxXOffset())
-
-	// Apply horizontal scroll via bubbles viewport
-	v.Model.ScrollLeft(v.Width + v.maxWidth)
-	if v.XOffset > 0 {
-		v.Model.ScrollRight(v.XOffset)
-	}
+	v.Model.SetXOffset(min(xoff, v.maxXOffset()))
 }
 
 // updateLayout adjusts embedded viewport dimensions based on scrollbar needs.
@@ -95,14 +86,16 @@ func (v *Scrollview) updateLayout() {
 	v.needsHBar = v.showBar && v.maxWidth > v.totalWidth
 
 	// Reserve space for scrollbars
-	v.Width = v.totalWidth
-	v.Height = v.totalHeight
+	w := v.totalWidth
+	h := v.totalHeight
 	if v.needsVBar {
-		v.Width-- // reserve 1 column for v-scrollbar
+		w-- // reserve 1 column for v-scrollbar
 	}
 	if v.needsHBar {
-		v.Height-- // reserve 1 line for h-scrollbar
+		h-- // reserve 1 line for h-scrollbar
 	}
+	v.Model.SetWidth(w)
+	v.Model.SetHeight(h)
 }
 
 // calcScrollbarThumb computes the start position and size of a scrollbar thumb.
@@ -127,7 +120,7 @@ func (v Scrollview) View() string {
 
 	// Add vertical scrollbar to each line (must append char-by-char to existing lines)
 	if v.needsVBar {
-		vThumbStart, vThumbSize := calcScrollbarThumb(v.YOffset, visibleLines, totalLines)
+		vThumbStart, vThumbSize := calcScrollbarThumb(v.YOffset(), visibleLines, totalLines)
 
 		vTrack := trackStyle.Render(vTrackChar)
 		vThumb := thumbStyle.Render(vThumbChar)
@@ -143,11 +136,11 @@ func (v Scrollview) View() string {
 
 	// Add horizontal scrollbar at bottom (can batch-style whole segments)
 	if v.needsHBar {
-		hThumbStart, hThumbSize := calcScrollbarThumb(v.XOffset, v.Width, v.maxWidth)
+		hThumbStart, hThumbSize := calcScrollbarThumb(v.XOffset(), v.Width(), v.maxWidth)
 
 		hTrackBefore := strings.Repeat(hTrackChar, hThumbStart)
 		hThumb := strings.Repeat(hThumbChar, hThumbSize)
-		hTrackAfter := strings.Repeat(hTrackChar, v.Width-hThumbStart-hThumbSize)
+		hTrackAfter := strings.Repeat(hTrackChar, v.Width()-hThumbStart-hThumbSize)
 
 		hBar := lipgloss.JoinHorizontal(lipgloss.Top,
 			trackStyle.Render(hTrackBefore),
@@ -168,53 +161,44 @@ func (v Scrollview) View() string {
 
 // maxXOffset returns the maximum horizontal scroll offset.
 func (v *Scrollview) maxXOffset() int {
-	return max(0, v.maxWidth-v.Width)
+	return max(0, v.maxWidth-v.Width())
 }
 
 // ScrollLeft scrolls the viewport left by one column.
 func (v *Scrollview) ScrollLeft() {
-	if v.XOffset > 0 {
-		v.XOffset--
-		v.Model.ScrollLeft(1)
+	if v.XOffset() > 0 {
+		v.Model.SetXOffset(v.XOffset() - 1)
 	}
 }
 
 // ScrollRight scrolls the viewport right by one column.
 func (v *Scrollview) ScrollRight() {
-	if v.XOffset < v.maxXOffset() {
-		v.XOffset++
-		v.Model.ScrollRight(1)
+	if v.XOffset() < v.maxXOffset() {
+		v.Model.SetXOffset(v.XOffset() + 1)
 	}
 }
 
 // ScrollLeftPage scrolls the viewport left by one page width.
 func (v *Scrollview) ScrollLeftPage() {
-	scroll := min(v.XOffset, v.Width)
-	v.XOffset -= scroll
-	v.Model.ScrollLeft(scroll)
+	scroll := min(v.XOffset(), v.Width())
+	v.Model.SetXOffset(v.XOffset() - scroll)
 }
 
 // ScrollRightPage scrolls the viewport right by one page width.
 func (v *Scrollview) ScrollRightPage() {
 	xmax := v.maxXOffset()
-	scroll := min(v.Width, xmax-v.XOffset)
-	v.XOffset += scroll
-	v.Model.ScrollRight(scroll)
+	newOffset := min(v.XOffset()+v.Width(), xmax)
+	v.Model.SetXOffset(newOffset)
 }
 
 // GotoLeftEdge scrolls to the left edge of content.
 func (v *Scrollview) GotoLeftEdge() {
-	v.Model.ScrollLeft(v.XOffset)
-	v.XOffset = 0
+	v.Model.SetXOffset(0)
 }
 
 // GotoRightEdge scrolls to the right edge of content.
 func (v *Scrollview) GotoRightEdge() {
-	xmax := v.maxXOffset()
-	if v.XOffset < xmax {
-		v.Model.ScrollRight(xmax - v.XOffset)
-		v.XOffset = xmax
-	}
+	v.Model.SetXOffset(v.maxXOffset())
 }
 
 // SetSize updates the viewport dimensions.

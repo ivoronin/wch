@@ -1,6 +1,6 @@
 package tui
 
-import "github.com/charmbracelet/lipgloss"
+import "charm.land/lipgloss/v2"
 
 // Layout constants
 const (
@@ -9,8 +9,8 @@ const (
 	timestampFmt = "15:04:05" // HH:MM:SS format for history timestamps
 )
 
-// Color constants
-const (
+// Colors
+var (
 	colorDim    = lipgloss.Color("#888888")
 	colorBright = lipgloss.Color("#FFFFFF")
 	colorError  = lipgloss.Color("#FF5555")

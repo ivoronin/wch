@@ -1,8 +1,8 @@
 package tui
 
 import (
-	"github.com/charmbracelet/bubbles/key"
-	tea "github.com/charmbracelet/bubbletea"
+	"charm.land/bubbles/v2/key"
+	tea "charm.land/bubbletea/v2"
 )
 
 // viewMode is the default mode for viewing output.
@@ -21,7 +21,7 @@ func (viewModeType) ShortHelp() []key.Binding {
 	}
 }
 
-func (viewModeType) HandleKey(msg tea.KeyMsg) tea.Msg {
+func (viewModeType) HandleKey(msg tea.KeyPressMsg) tea.Msg {
 	switch {
 	case key.Matches(msg, viewKeys.Picker):
 		return switchModeMsg{mode: pickerMode}

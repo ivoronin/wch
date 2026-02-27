@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	tea "github.com/charmbracelet/bubbletea"
+	tea "charm.land/bubbletea/v2"
 
 	"github.com/ivoronin/wch/internal/diff"
 	"github.com/ivoronin/wch/internal/runner"
@@ -70,16 +70,13 @@ func New(cfg Config) Model {
 
 // Init starts the TUI.
 func (m Model) Init() tea.Cmd {
-	return tea.Batch(
-		func() tea.Msg { return tickMsg{} },
-		tea.SetWindowTitle("wch: "+m.session.Command),
-	)
+	return func() tea.Msg { return tickMsg{} }
 }
 
 // Update handles Bubble Tea messages.
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
-	case tea.KeyMsg:
+	case tea.KeyPressMsg:
 		return m.handleKey(msg)
 	case tea.WindowSizeMsg:
 		return m.handleResize(msg)
@@ -101,7 +98,7 @@ func (m Model) handleTick() (Model, tea.Cmd) {
 }
 
 // handleKey dispatches key events: global keys first, then mode-specific.
-func (m Model) handleKey(msg tea.KeyMsg) (Model, tea.Cmd) {
+func (m Model) handleKey(msg tea.KeyPressMsg) (Model, tea.Cmd) {
 	if action := handleGlobalKey(msg); action != nil {
 		return m.applyGlobalAction(action)
 	}
@@ -181,7 +178,7 @@ func (m Model) handleResize(msg tea.WindowSizeMsg) (Model, tea.Cmd) {
 	// ClearScreen forces a full terminal redraw, preventing visual artifacts
 	// in terminal multiplexers like Zellij that don't handle Bubble Tea's
 	// differential rendering correctly on resize.
-	return m.withResizedScrollview(), tea.ClearScreen
+	return m.withResizedScrollview(), func() tea.Msg { return tea.ClearScreen() }
 }
 
 // handleExecResult processes command execution results.
@@ -276,7 +273,7 @@ func (m Model) isFollowing() bool {
 	return n == 0 || m.historyIndex == n-1
 }
 
-// sendNotification sends an OSC9 notification using tea.Printf for TUI safety.
+// sendNotification sends an OSC9 notification via raw terminal output.
 func sendNotification() tea.Cmd {
-	return tea.Printf("\033]9;wch: output changed\a")
+	return tea.Raw("\033]9;wch: output changed\a")
 }
