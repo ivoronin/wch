@@ -73,10 +73,10 @@ func (v *Scrollview) SetContent(content string) {
 
 	// Preserve vertical scroll position (clamped)
 	ymax := max(0, v.TotalLineCount()-v.Height())
-	v.Model.SetYOffset(min(yoff, ymax))
+	v.SetYOffset(min(yoff, ymax))
 
 	// Preserve horizontal scroll (clamped)
-	v.Model.SetXOffset(min(xoff, v.maxXOffset()))
+	v.SetXOffset(min(xoff, v.maxXOffset()))
 }
 
 // updateLayout adjusts embedded viewport dimensions based on scrollbar needs.
@@ -94,8 +94,8 @@ func (v *Scrollview) updateLayout() {
 	if v.needsHBar {
 		h-- // reserve 1 line for h-scrollbar
 	}
-	v.Model.SetWidth(w)
-	v.Model.SetHeight(h)
+	v.SetWidth(w)
+	v.SetHeight(h)
 }
 
 // calcScrollbarThumb computes the start position and size of a scrollbar thumb.
@@ -167,38 +167,38 @@ func (v *Scrollview) maxXOffset() int {
 // ScrollLeft scrolls the viewport left by one column.
 func (v *Scrollview) ScrollLeft() {
 	if v.XOffset() > 0 {
-		v.Model.SetXOffset(v.XOffset() - 1)
+		v.SetXOffset(v.XOffset() - 1)
 	}
 }
 
 // ScrollRight scrolls the viewport right by one column.
 func (v *Scrollview) ScrollRight() {
 	if v.XOffset() < v.maxXOffset() {
-		v.Model.SetXOffset(v.XOffset() + 1)
+		v.SetXOffset(v.XOffset() + 1)
 	}
 }
 
 // ScrollLeftPage scrolls the viewport left by one page width.
 func (v *Scrollview) ScrollLeftPage() {
 	scroll := min(v.XOffset(), v.Width())
-	v.Model.SetXOffset(v.XOffset() - scroll)
+	v.SetXOffset(v.XOffset() - scroll)
 }
 
 // ScrollRightPage scrolls the viewport right by one page width.
 func (v *Scrollview) ScrollRightPage() {
 	xmax := v.maxXOffset()
 	newOffset := min(v.XOffset()+v.Width(), xmax)
-	v.Model.SetXOffset(newOffset)
+	v.SetXOffset(newOffset)
 }
 
 // GotoLeftEdge scrolls to the left edge of content.
 func (v *Scrollview) GotoLeftEdge() {
-	v.Model.SetXOffset(0)
+	v.SetXOffset(0)
 }
 
 // GotoRightEdge scrolls to the right edge of content.
 func (v *Scrollview) GotoRightEdge() {
-	v.Model.SetXOffset(v.maxXOffset())
+	v.SetXOffset(v.maxXOffset())
 }
 
 // SetSize updates the viewport dimensions.
