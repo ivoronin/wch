@@ -56,7 +56,7 @@ wch kubectl get pods                    # watch with 1s interval
 wch -i 5s kubectl get pods              # 5 second interval
 wch -d kubectl get pods                 # disable diff highlighting
 wch -t kubectl get pods                 # hide status bar
-wch -b kubectl get pods                 # disable notifications
+wch -b kubectl get pods                 # enable notifications
 ```
 
 ## Configuration
@@ -68,7 +68,7 @@ wch -b kubectl get pods                 # disable notifications
 | `-i` | Refresh interval | `1s` |
 | `-d` | Disable diff highlighting | `false` |
 | `-t` | Hide status bar | `false` |
-| `-b` | Disable notifications | `false` |
+| `-b` | Enable notifications | `false` |
 
 ## License
 

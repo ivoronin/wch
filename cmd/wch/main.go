@@ -18,7 +18,7 @@ func main() {
 	interval := flag.Duration("i", time.Second, "refresh interval")
 	disableDiff := flag.Bool("d", false, "disable diff highlighting")
 	hideStatus := flag.Bool("t", false, "hide status bar")
-	disableNotify := flag.Bool("b", false, "disable terminal notification on change")
+	enableNotify := flag.Bool("b", false, "enable terminal notification on change")
 	showVersion := flag.Bool("version", false, "show version")
 
 	flag.Usage = func() {
@@ -47,7 +47,7 @@ func main() {
 		Interval:       *interval,
 		DiffEnabled:    !*disableDiff,
 		ShowStatus:     !*hideStatus,
-		NotifyOnChange: !*disableNotify,
+		NotifyOnChange: *enableNotify,
 	}
 
 	model := tui.New(cfg)
