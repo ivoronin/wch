@@ -103,6 +103,8 @@ func (v *Scrollview) updateLayout() {
 func calcScrollbarThumb(offset, visible, total int) (start, size int) {
 	size = max(1, visible*visible/total)
 	start = offset * (visible - size) / max(1, total-visible)
+	// Clamp so that start+size never exceeds visible (defensive against stale offset)
+	start = min(start, max(0, visible-size))
 	return
 }
 
@@ -206,6 +208,8 @@ func (v *Scrollview) SetSize(width, height int) {
 	v.totalWidth = width
 	v.totalHeight = height
 	v.updateLayout()
+	// Clamp horizontal scroll to new valid range
+	v.SetXOffset(min(v.XOffset(), v.maxXOffset()))
 }
 
 // SetShowScrollbar enables or disables the scrollbar.
