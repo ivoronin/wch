@@ -82,7 +82,7 @@ func (f *FrameViewModel) ShowAnchored(newBody, prevBody string) {
 		newOffset = anchor.MapLine(f.YOffset())
 	}
 
-	f.Scrollview.SetContent(newBody)
+	f.SetContent(newBody)
 
 	switch {
 	case atTop:

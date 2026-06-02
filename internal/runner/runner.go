@@ -40,7 +40,7 @@ type limitedBuffer struct {
 }
 
 func (l *limitedBuffer) Write(p []byte) (int, error) {
-	if space := maxOutputBytes - l.Buffer.Len(); space > 0 {
+	if space := maxOutputBytes - l.Len(); space > 0 {
 		l.Buffer.Write(p[:min(len(p), space)])
 	}
 	return len(p), nil
