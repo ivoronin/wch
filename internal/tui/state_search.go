@@ -82,7 +82,10 @@ func (s searchState) RenderBar(m Model) string {
 	counter := fmt.Sprintf("[%d of %d]", s.selected+1, len(s.matches))
 	indicator := indicatorStyle.Render("❄")
 	left := queryWithCounter(query, counter, barLeftZoneWidth(m.width))
-	return m.renderBarLayout(left, indicator, renderHelp(searchHelpBindings()))
+	// n is advertised since it's the primary post-match action; the rest (p, / restart)
+	// lives in the help overlay.
+	help := renderHelp(minimalBarBindings(commonKeys.Escape, searchKeys.NavNext))
+	return m.renderBarLayout(left, indicator, help)
 }
 
 // Handle processes a key for searchState. n/p navigates matches with wrap;
@@ -112,12 +115,6 @@ func (s searchState) advance(m Model, delta int) (Model, searchState) {
 	n := len(s.matches)
 	s.selected = ((s.selected+delta)%n + n) % n
 	return m.repaintWith(s, s.snap()), s
-}
-
-// searchHelpBindings is the bar trailer for searchState. n is advertised since it's the
-// primary post-match action; the rest (p, / restart) lives in the help overlay.
-func searchHelpBindings() []key.Binding {
-	return minimalBarBindings(commonKeys.Escape, searchKeys.NavNext)
 }
 
 // queryWithCounter joins head and tail with a single space, ellipsizing head if the pair

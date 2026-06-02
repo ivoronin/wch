@@ -400,10 +400,3 @@ func TestSearchStateHandleEscReturnsToPrev(t *testing.T) {
 		t.Errorf("searchState.Handle(Esc) returned %T, want viewState (prev)", st)
 	}
 }
-
-func TestSearchHelpBindingsMinimal(t *testing.T) {
-	bindings := searchHelpBindings()
-	if len(bindings) != 4 {
-		t.Errorf("searchHelpBindings len = %d, want 4 (Esc, n, Help, Quit)", len(bindings))
-	}
-}
