@@ -17,8 +17,8 @@ const (
 
 // Scrollbar styles
 var (
-	trackStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("#888888"))
-	thumbStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("#FFFFFF"))
+	trackStyle = lipgloss.NewStyle().Faint(true)
+	thumbStyle = lipgloss.NewStyle().Bold(true)
 )
 
 // Scrollview wraps bubbles viewport with horizontal scrolling and scrollbar rendering.
@@ -37,13 +37,12 @@ type Scrollview struct {
 
 // NewScrollview creates a new Scrollview with the given dimensions.
 func NewScrollview(width, height int) Scrollview {
-	v := Scrollview{
+	return Scrollview{
 		Model:       viewport.New(viewport.WithWidth(width), viewport.WithHeight(height)),
 		showBar:     true,
 		totalWidth:  width,
 		totalHeight: height,
 	}
-	return v
 }
 
 // SetContent sets the viewport content and preserves scroll position.
@@ -58,9 +57,7 @@ func (v *Scrollview) SetContent(content string) {
 		v.lines = strings.Split(content, "\n")
 		v.maxWidth = 0
 		for _, line := range v.lines {
-			if w := lipgloss.Width(line); w > v.maxWidth {
-				v.maxWidth = w
-			}
+			v.maxWidth = max(v.maxWidth, lipgloss.Width(line))
 		}
 	}
 
@@ -168,29 +165,22 @@ func (v *Scrollview) maxXOffset() int {
 
 // ScrollLeft scrolls the viewport left by one column.
 func (v *Scrollview) ScrollLeft() {
-	if v.XOffset() > 0 {
-		v.SetXOffset(v.XOffset() - 1)
-	}
+	v.SetXOffset(max(0, v.XOffset()-1))
 }
 
 // ScrollRight scrolls the viewport right by one column.
 func (v *Scrollview) ScrollRight() {
-	if v.XOffset() < v.maxXOffset() {
-		v.SetXOffset(v.XOffset() + 1)
-	}
+	v.SetXOffset(min(v.XOffset()+1, v.maxXOffset()))
 }
 
 // ScrollLeftPage scrolls the viewport left by one page width.
 func (v *Scrollview) ScrollLeftPage() {
-	scroll := min(v.XOffset(), v.Width())
-	v.SetXOffset(v.XOffset() - scroll)
+	v.SetXOffset(max(0, v.XOffset()-v.Width()))
 }
 
 // ScrollRightPage scrolls the viewport right by one page width.
 func (v *Scrollview) ScrollRightPage() {
-	xmax := v.maxXOffset()
-	newOffset := min(v.XOffset()+v.Width(), xmax)
-	v.SetXOffset(newOffset)
+	v.SetXOffset(min(v.XOffset()+v.Width(), v.maxXOffset()))
 }
 
 // GotoLeftEdge scrolls to the left edge of content.
@@ -216,4 +206,52 @@ func (v *Scrollview) SetSize(width, height int) {
 func (v *Scrollview) SetShowScrollbar(show bool) {
 	v.showBar = show
 	v.updateLayout()
+}
+
+// NeedsVerticalScrollbar reports whether a vertical scrollbar is currently being rendered
+// (the scrollbar is enabled and content overflows the visible height).
+func (v Scrollview) NeedsVerticalScrollbar() bool { return v.needsVBar }
+
+// NeedsHorizontalScrollbar reports the equivalent for the horizontal scrollbar.
+func (v Scrollview) NeedsHorizontalScrollbar() bool { return v.needsHBar }
+
+// EnsureLineVisible scrolls vertically by the minimum amount required to put line within the
+// visible window: nothing if it's already on screen, snap to the top if it's above, snap
+// to the bottom otherwise. Returns the resulting YOffset.
+func (v *Scrollview) EnsureLineVisible(line int) int {
+	y := v.YOffset()
+	h := v.Height()
+	switch {
+	case line < y:
+		v.SetYOffset(line)
+	case h > 0 && line >= y+h:
+		v.SetYOffset(line - h + 1)
+	}
+	return v.YOffset()
+}
+
+// EnsureColumnVisible scrolls horizontally so the range [col, col+length) is fully inside
+// the viewport. If the range is already visible, no change. Otherwise snap the left or right
+// edge of the range to the viewport boundary, preferring to keep the left edge in view when
+// the range is wider than the viewport.
+func (v *Scrollview) EnsureColumnVisible(col, length int) int {
+	length = max(length, 1)
+	x := v.XOffset()
+	w := v.Width()
+	if w <= 0 {
+		return x
+	}
+	switch {
+	case col < x:
+		v.SetXOffset(col)
+	case col+length > x+w:
+		// Range right edge is past the viewport. If the range fits, scroll just enough to
+		// fit it; otherwise prefer the left edge in view.
+		if length <= w {
+			v.SetXOffset(col + length - w)
+		} else {
+			v.SetXOffset(col)
+		}
+	}
+	return v.XOffset()
 }

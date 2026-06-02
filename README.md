@@ -19,17 +19,18 @@ wch kubectl get pods
 
 ## Overview
 
-wch runs a command periodically and displays the output in a scrollable terminal UI. Unlike standard `watch(1)`, you can scroll through the output when it exceeds the terminal height. Changed lines are highlighted using character-level diff, making it easy to spot what changed between executions.
-
-Press `b` to enter history browser and navigate through up to 1000 past executions using a timeline picker. Only executions where output actually changed are recorded, so you get meaningful history without noise.
+wch runs a command on an interval and displays the scrollable output. Two design choices set it apart from `watch(1)` and other modern replacements. Rows in the output are matched across refreshes by identity (a stable token like a pod `NAME`) instead of exact line equality, so the line you're reading stays anchored in place when rows insert above the viewport, and a row whose `AGE` ticks every refresh reads as one cell change rather than a delete + insert. The TUI itself shows only the command's output and a single status line — no border, no line numbers, no help banner, no config file, no keymap rebinding, no theme to pick (light/dark is detected from the terminal background at startup).
 
 ## Features
 
+- Scroll position anchored to content (row identity, not line offset)
+- Minimal UI surface (no border, line numbers, help banner, config file, keymap rebinding; theme auto-detected)
+- Word-level diff highlighting between executions, tolerant of volatile fields (`AGE`, `RESTARTS`) so a row whose value ticks each refresh doesn't read as a delete + insert
+- History keeps up to `-l` past executions (default 86400 ≈ 24h at 1s interval; `-l 0` for unlimited), navigable with arrow keys
+- Record sessions to a JSONL file (`-w <path>`) and replay them offline with full history navigation (`-r <file>`)
 - Scrollable view for output that exceeds terminal height (unlike `watch(1)`)
-- History browser stores up to 1000 executions, navigate with arrow keys or h/l
-- Character-level diff highlighting between executions
 - Terminal notifications on output change (OSC 9, supported by iTerm2 and others)
-- Vim-style navigation (hjkl, g/G, pgup/pgdown)
+- Keyboard navigation (arrow keys, PgUp/PgDn, Home/End)
 - Pause/resume execution
 - Toggleable status bar and diff highlighting
 - Horizontal scrolling for wide output
@@ -52,11 +53,13 @@ brew install ivoronin/ivoronin/wch
 ### Basic
 
 ```bash
-wch kubectl get pods                    # watch with 1s interval
-wch -i 5s kubectl get pods              # 5 second interval
-wch -d kubectl get pods                 # disable diff highlighting
-wch -t kubectl get pods                 # hide status bar
-wch -b kubectl get pods                 # enable notifications
+wch kubectl get pods                          # watch with 1s interval
+wch -i 5s kubectl get pods                    # 5 second interval
+wch -d kubectl get pods                       # disable diff highlighting
+wch -t kubectl get pods                       # hide status bar
+wch -b kubectl get pods                       # enable notifications
+wch -w session.wch.jsonl kubectl get pods     # record session while watching
+wch -r session.wch.jsonl                      # replay recorded session offline
 ```
 
 ## Configuration
@@ -69,6 +72,8 @@ wch -b kubectl get pods                 # enable notifications
 | `-d` | Disable diff highlighting | `false` |
 | `-t` | Hide status bar | `false` |
 | `-b` | Enable notifications | `false` |
+| `-w` | Write recording to path (must not exist) | — |
+| `-r` | Read a recorded session (offline replay) | — |
 
 ## License
 

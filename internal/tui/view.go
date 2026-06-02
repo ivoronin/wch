@@ -1,101 +1,53 @@
 package tui
 
 import (
-	"strings"
-
-	"charm.land/bubbles/v2/key"
 	tea "charm.land/bubbletea/v2"
-	"charm.land/lipgloss/v2"
-	"github.com/charmbracelet/x/ansi"
+
+	"github.com/ivoronin/wch/internal/tui/helprender"
+	"github.com/ivoronin/wch/internal/tui/notify"
 )
 
-// Constants are defined in styles.go
-
-// View renders the UI.
+// View renders the UI. Layer order: viewport → bar → help overlay (when toggled) → notify
+// bubbles. Notify draws last so a transient bubble still surfaces over the help panel.
 func (m Model) View() tea.View {
 	var content string
 	if !m.ready {
 		content = "Initializing..."
 	} else {
-		// Main content
-		content = m.viewport.View()
-
-		// Bottom bar: picker bar replaces status bar when in picker mode
-		var bottomBar string
-		if m.mode == pickerMode {
-			bottomBar = m.renderPickerBar()
-		} else if m.statusBar {
-			bottomBar = m.renderStatusBar()
+		content = m.frames.View()
+		if m.barShown() {
+			if bar := m.state.RenderBar(m); bar != "" {
+				content += "\n" + bar
+			}
 		}
-
-		if bottomBar != "" {
-			content += "\n" + bottomBar
+		if m.prefs.HelpVisible {
+			content = helprender.Overlay(content, renderHelpPanel(), m.width, m.height)
+		}
+		if m.notify.Active() {
+			// Adaptive insets: snug to the bottom-right corner of the *available* content
+			// area. We add an inset only when there's something to avoid overlaying — the
+			// vertical scrollbar on the right, the status bar and/or horizontal scrollbar
+			// at the bottom. No fixed gaps.
+			var insets notify.Insets
+			if m.frames.NeedsVerticalScrollbar() {
+				insets.Right = 1
+			}
+			if m.barShown() {
+				insets.Bottom++
+			}
+			if m.frames.NeedsHorizontalScrollbar() {
+				insets.Bottom++
+			}
+			content = m.notify.Overlay(content, m.width, m.height, insets)
 		}
 	}
 
 	v := tea.NewView(content)
 	v.AltScreen = true
-	v.WindowTitle = "wch: " + m.session.Command
+	if m.isLive() {
+		v.WindowTitle = "wch: " + m.session.Command
+	} else {
+		v.WindowTitle = "wch (replay): " + m.session.Command
+	}
 	return v
-}
-
-// renderStatusBar renders the bottom status bar.
-// Layout: [command]  [timestamp][indicator]  [help]
-// Timestamp is centered; indicator follows it; command/help fill sides.
-func (m Model) renderStatusBar() string {
-	timestamp := m.renderTimestamp()
-	indicator := m.renderIndicator()
-
-	// Side widths: center timestamp (not the whole center block)
-	contentWidth := m.width - statusBarStyle.GetHorizontalFrameSize()
-	leftWidth := (contentWidth - lipgloss.Width(timestamp)) / 2
-	rightWidth := contentWidth - leftWidth - lipgloss.Width(timestamp) - lipgloss.Width(indicator)
-
-	cmd := ansi.Truncate(m.session.Command, leftWidth-1, "…")
-	left := renderLeft(cmd, leftWidth)
-	right := renderRight(renderHelp(m.mode), rightWidth)
-	content := lipgloss.JoinHorizontal(lipgloss.Top, left, timestamp, indicator, right)
-
-	return statusBarStyle.Width(m.width).Render(content)
-}
-
-func (m Model) renderTimestamp() string {
-	if m.historyIndex >= 0 {
-		return m.session.History[m.historyIndex].Timestamp.Format(timestampFmt)
-	}
-	return ""
-}
-
-func (m Model) renderIndicator() string {
-	var indicator string
-	switch {
-	case !m.isFollowing():
-		indicator = "⎌"
-	case m.paused:
-		indicator = "⏸"
-	case m.executing:
-		indicator = "*"
-	default:
-		indicator = "·"
-	}
-	return indicatorStyle.Render(indicator)
-}
-
-// helpProvider is a minimal interface for help rendering.
-type helpProvider interface {
-	ShortHelp() []key.Binding
-}
-
-// renderHelp renders styled help bindings.
-func renderHelp(hp helpProvider) string {
-	bindings := hp.ShortHelp()
-	parts := make([]string, 0, len(bindings))
-	for _, b := range bindings {
-		if !b.Enabled() {
-			continue
-		}
-		h := b.Help()
-		parts = append(parts, h.Key+" "+h.Desc)
-	}
-	return helpStyle.Render(strings.Join(parts, " • "))
 }

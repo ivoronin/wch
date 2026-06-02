@@ -1,72 +1,53 @@
 package diff
 
-import (
-	"strings"
+// LineKind classifies a new-output line in the diff.
+type LineKind uint8
 
-	"charm.land/lipgloss/v2"
-	difflib "github.com/sergi/go-diff/diffmatchpatch"
+const (
+	LineEqual   LineKind = iota // unchanged from the old snapshot
+	LineChanged                 // same row, some tokens changed (see Spans)
+	LineAdded                   // no counterpart in the old snapshot
 )
 
-var (
-	insertStyle = lipgloss.NewStyle().Background(lipgloss.Color("#2E7D32")) // Green background
-)
-
-// Highlighter computes and highlights diffs between outputs
-type Highlighter struct {
-	dmp *difflib.DiffMatchPatch
+// Line is the diff of one new-output line. For LineChanged, Spans is the word-level
+// breakdown (concatenating back to Text); for LineEqual and LineAdded it is nil. Deleted old
+// lines are not represented - the diff describes the new snapshot.
+type Line struct {
+	Kind     LineKind
+	Text     string // the new-output line
+	OldIndex int    // matched old-output line index, or -1
+	Spans    []Span
 }
 
-// New creates a new diff highlighter
-func New() *Highlighter {
-	return &Highlighter{
-		dmp: difflib.New(),
-	}
-}
-
-// Highlight returns the new text with changed characters highlighted.
-func (h *Highlighter) Highlight(oldText, newText string) string {
-	if oldText == newText {
-		return newText
-	}
-
-	oldLines := strings.Split(oldText, "\n")
-	newLines := strings.Split(newText, "\n")
-
-	var result strings.Builder
-	for i, newLine := range newLines {
-		if i > 0 {
-			result.WriteString("\n")
-		}
-
-		var oldLine string
-		if i < len(oldLines) {
-			oldLine = oldLines[i]
-		}
-
-		if oldLine == newLine {
-			result.WriteString(newLine)
-		} else {
-			result.WriteString(h.highlightLine(oldLine, newLine))
+// Lines returns the structured diff of the new output: one Line per new-output line, in
+// order. Callers render it however they like (Equal plain, Added whole-line highlighted,
+// Changed with its Changed spans highlighted). Output length equals the number of new lines.
+func (a Alignment) Lines() []Line {
+	lines := make([]Line, 0, len(a.newLines))
+	var pendDel []int // deletes awaiting an insert to pair with (an in-place replace)
+	di := 0
+	for _, o := range a.ops {
+		switch o.kind {
+		case opDelete:
+			pendDel = append(pendDel, o.oldIdx)
+		case opMatch:
+			pendDel, di = pendDel[:0], 0 // unpaired deletes are dropped
+			nl := a.newLines[o.newIdx]
+			if a.oldLines[o.oldIdx] == nl {
+				lines = append(lines, Line{Kind: LineEqual, Text: nl, OldIndex: o.oldIdx})
+			} else {
+				lines = append(lines, Line{Kind: LineChanged, Text: nl, OldIndex: o.oldIdx, Spans: WordDiff(a.oldLines[o.oldIdx], nl)})
+			}
+		case opInsert:
+			nl := a.newLines[o.newIdx]
+			if di < len(pendDel) {
+				oldIdx := pendDel[di]
+				di++
+				lines = append(lines, Line{Kind: LineChanged, Text: nl, OldIndex: oldIdx, Spans: WordDiff(a.oldLines[oldIdx], nl)})
+			} else {
+				lines = append(lines, Line{Kind: LineAdded, Text: nl, OldIndex: -1})
+			}
 		}
 	}
-
-	return result.String()
-}
-
-// highlightLine highlights character-level differences in a single line
-func (h *Highlighter) highlightLine(oldLine, newLine string) string {
-	diffs := h.dmp.DiffMain(oldLine, newLine, false)
-
-	var result strings.Builder
-	for _, d := range diffs {
-		switch d.Type {
-		case difflib.DiffInsert:
-			result.WriteString(insertStyle.Render(d.Text))
-		case difflib.DiffEqual:
-			result.WriteString(d.Text)
-			// DiffDelete: we don't render deleted text
-		}
-	}
-
-	return result.String()
+	return lines
 }

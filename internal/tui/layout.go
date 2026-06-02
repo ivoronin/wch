@@ -24,6 +24,14 @@ func calcThreeColumnLayout(totalWidth, centerWidth int) threeColumnLayout {
 	}
 }
 
+// barLeftZoneWidth returns the width of the left zone of the standard three-column
+// status bar (using centerBlockWidth as the center). Callers that want to lay out
+// their left content with internal flex (e.g. searchState's query+counter) can
+// target the exact zone renderBarLayout uses.
+func barLeftZoneWidth(width int) int {
+	return calcThreeColumnLayout(width, centerBlockWidth).leftWidth
+}
+
 // renderLeft renders content left-aligned within the given width.
 // Content is truncated with ellipsis if it exceeds the available width.
 func renderLeft(content string, width int) string {

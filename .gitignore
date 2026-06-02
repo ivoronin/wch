@@ -29,6 +29,9 @@ Thumbs.db
 # Go
 vendor/
 
+# wch recordings
+*.wch.jsonl
+
 # Python
 .venv/
 __pycache__/
