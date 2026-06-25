@@ -78,9 +78,14 @@ func (v *Scrollview) SetContent(content string) {
 
 // updateLayout adjusts embedded viewport dimensions based on scrollbar needs.
 func (v *Scrollview) updateLayout() {
-	// Compute scrollbar needs using cached values
-	v.needsVBar = v.showBar && len(v.lines) > v.totalHeight
-	v.needsHBar = v.showBar && v.maxWidth > v.totalWidth
+	// Compute scrollbar needs using cached values. The dimension guards (totalHeight/
+	// totalWidth > 0) keep degenerate geometry from claiming a scrollbar: when wch's
+	// output is piped to a non-TTY the program receives a 0x0 WindowSizeMsg, and the
+	// bar reservation in the caller can drive a dimension negative. Without the guard,
+	// len(v.lines) > v.totalHeight is trivially true (e.g. 0 > -1) and View renders a
+	// vertical bar over zero-line content, dividing by zero in calcScrollbarThumb.
+	v.needsVBar = v.showBar && v.totalHeight > 0 && len(v.lines) > v.totalHeight
+	v.needsHBar = v.showBar && v.totalWidth > 0 && v.maxWidth > v.totalWidth
 
 	// Reserve space for scrollbars
 	w := v.totalWidth
@@ -98,7 +103,9 @@ func (v *Scrollview) updateLayout() {
 // calcScrollbarThumb computes the start position and size of a scrollbar thumb.
 // offset is the current scroll position, visible is the viewport size, total is the content size.
 func calcScrollbarThumb(offset, visible, total int) (start, size int) {
-	size = max(1, visible*visible/total)
+	// max(1, total) guards the division: callers only render a thumb when total > 0, but
+	// stay defensive so degenerate geometry can never divide by zero.
+	size = max(1, visible*visible/max(1, total))
 	start = offset * (visible - size) / max(1, total-visible)
 	// Clamp so that start+size never exceeds visible (defensive against stale offset)
 	start = min(start, max(0, visible-size))

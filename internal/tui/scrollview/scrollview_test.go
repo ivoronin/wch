@@ -41,6 +41,29 @@ func TestViewNoPanicOnResizeAfterScroll(t *testing.T) {
 	sv.View()
 }
 
+// TestViewNoPanicOnDegenerateSize reproduces issue #14: piping wch output to a non-TTY
+// (e.g. `wch date | cat`) delivers a 0x0 WindowSizeMsg, and the caller's bar-space
+// reservation can drive a dimension negative. A negative totalHeight made the
+// len(lines) > totalHeight overflow check trivially true even for empty content, so
+// View() asked calcScrollbarThumb to size a thumb over zero total lines and divided by
+// zero. No scrollbar should be claimed and View() must not panic.
+func TestViewNoPanicOnDegenerateSize(t *testing.T) {
+	sv := NewScrollview(0, 0)
+	sv.SetSize(0, -1) // mirrors withResizedScrollview's h-- on a 0-height window
+
+	// Empty content: no lines to scroll, so neither bar should be needed.
+	sv.SetContent("")
+	if sv.NeedsVerticalScrollbar() || sv.NeedsHorizontalScrollbar() {
+		t.Errorf("degenerate size, empty content: NeedsV=%v NeedsH=%v, want false/false",
+			sv.NeedsVerticalScrollbar(), sv.NeedsHorizontalScrollbar())
+	}
+	sv.View() // must not panic
+
+	// Real content under degenerate geometry must also stay panic-free.
+	sv.SetContent(strings.Repeat("line\n", 50))
+	sv.View()
+}
+
 // NeedsVerticalScrollbar / NeedsHorizontalScrollbar reflect whether each bar is currently
 // rendered: they require both showBar=true and the content overflowing the corresponding
 // axis. Disabling the scrollbar drops both to false.
