@@ -6,46 +6,28 @@ const zeit = @import("zeit");
 
 const clock_width = 8;
 const edge_padding: u16 = 1;
-const history_spacing: u16 = 2;
+const section_spacing: u16 = 2;
 
 const bar_style: vaxis.Style = .{ .bg = .{ .index = 8 }, .fg = .{ .index = 15 } };
 const shortcut_style: vaxis.Style = .{ .bg = bar_style.bg, .fg = bar_style.fg, .bold = true };
+const ellipsis_cell: vaxis.Cell = .{ .char = .{ .grapheme = "…" }, .style = bar_style };
 
 const live_help: []const vaxis.Segment = &.{
     .{ .text = "b", .style = shortcut_style },
-    .{ .text = " hist", .style = bar_style },
-    .{ .text = " · ", .style = bar_style },
+    .{ .text = " hist · ", .style = bar_style },
     .{ .text = "q", .style = shortcut_style },
     .{ .text = " quit", .style = bar_style },
 };
 
 const history_help: []const vaxis.Segment = &.{
     .{ .text = "j", .style = shortcut_style },
-    .{ .text = " prev", .style = bar_style },
-    .{ .text = " · ", .style = bar_style },
+    .{ .text = " prev · ", .style = bar_style },
     .{ .text = "k", .style = shortcut_style },
-    .{ .text = " next", .style = bar_style },
-    .{ .text = " · ", .style = bar_style },
+    .{ .text = " next · ", .style = bar_style },
     .{ .text = "b", .style = shortcut_style },
-    .{ .text = " live", .style = bar_style },
-    .{ .text = " · ", .style = bar_style },
+    .{ .text = " live · ", .style = bar_style },
     .{ .text = "q", .style = shortcut_style },
     .{ .text = " quit", .style = bar_style },
-};
-
-const StatusIndicator = enum {
-    idle,
-    running,
-    history,
-
-    /// Return the glyph for this state.
-    fn glyph(self: StatusIndicator) []const u8 {
-        return switch (self) {
-            .idle => "·",
-            .running => "*",
-            .history => "←",
-        };
-    }
 };
 
 pub const StatusBar = struct {
@@ -56,7 +38,7 @@ pub const StatusBar = struct {
     timezone: zeit.TimeZone,
     // Vaxis cells borrow formatted text until the frame is rendered.
     clock_buffer: [clock_width]u8 = undefined,
-    run_position_buffer: [64]u8 = undefined,
+    status_buffer: [64]u8 = undefined,
 
     /// Create a status bar using local time when available.
     pub fn init(
@@ -83,37 +65,14 @@ pub const StatusBar = struct {
         last_run_at: ?std.Io.Timestamp,
         run_in_progress: bool,
     ) void {
-        window.fill(.{ .style = bar_style });
-        const help_column = window.width -|
-            window.print(live_help, .{ .wrap = .none, .commit = false }).col -|
-            edge_padding;
-        _ = window.print(live_help, .{ .col_offset = help_column, .wrap = .none });
-
         const clock_text = if (last_run_at) |completed_at|
             formatClockTime(self, completed_at)
         else
             "";
-        const clock_column = clockColumn(window.width);
-        const indicator_column = clock_column +| clock_width +| 1;
-        const indicator_text = (if (run_in_progress) StatusIndicator.running else StatusIndicator.idle).glyph();
-
-        const middle_status_visible = indicator_column +| window.gwidth(indicator_text) <= help_column;
-        if (middle_status_visible) {
-            _ = window.printSegment(
-                .{ .text = clock_text, .style = bar_style },
-                .{ .col_offset = clock_column, .wrap = .none },
-            );
-            _ = window.printSegment(
-                .{ .text = indicator_text, .style = bar_style },
-                .{ .col_offset = indicator_column, .wrap = .none },
-            );
-        }
-
-        const command_end_column = if (middle_status_visible) clock_column else help_column;
-        self.drawCommand(window, command_end_column);
+        self.draw(window, clock_text, if (run_in_progress) "*" else "·", live_help);
     }
 
-    /// Draw history position, time, and navigation help.
+    /// Draw the command, history position, time, and navigation help.
     pub fn drawHistory(
         self: *StatusBar,
         window: vaxis.Window,
@@ -121,49 +80,60 @@ pub const StatusBar = struct {
         run_count: usize,
         completed_at: std.Io.Timestamp,
     ) void {
-        window.fill(.{ .style = bar_style });
-        const clock_column = clockColumn(window.width);
-        _ = window.printSegment(
-            .{ .text = formatClockTime(self, completed_at), .style = bar_style },
-            .{ .col_offset = clock_column, .wrap = .none },
-        );
-        _ = window.printSegment(
-            .{ .text = StatusIndicator.history.glyph(), .style = bar_style },
-            .{ .col_offset = clock_column +| clock_width +| 1, .wrap = .none },
-        );
-
-        const run_position_text = std.fmt.bufPrint(
-            &self.run_position_buffer,
-            "Run {d}/{d}",
+        const status_text = std.fmt.bufPrint(
+            &self.status_buffer,
+            "← {d}/{d}",
             .{ run_number, run_count },
         ) catch unreachable;
-        if (edge_padding +| window.gwidth(run_position_text) +| history_spacing <= clock_column)
-            _ = window.printSegment(
-                .{ .text = run_position_text, .style = bar_style },
-                .{ .col_offset = edge_padding, .wrap = .none },
-            );
-
-        const help_column = window.width -|
-            window.print(history_help, .{ .wrap = .none, .commit = false }).col -|
-            edge_padding;
-        if (clock_column +| clock_width +| history_spacing <= help_column)
-            _ = window.print(history_help, .{ .col_offset = help_column, .wrap = .none });
+        self.draw(window, formatClockTime(self, completed_at), status_text, history_help);
     }
 
-    /// Draw the command before an end column and mark truncation.
-    fn drawCommand(self: *const StatusBar, window: vaxis.Window, end_column: u16) void {
+    /// Draw one bar using the same geometry in both modes.
+    fn draw(
+        self: *const StatusBar,
+        window: vaxis.Window,
+        clock_text: []const u8,
+        status_text: []const u8,
+        help: []const vaxis.Segment,
+    ) void {
+        window.fill(.{ .style = bar_style });
+        const clock_column = clockColumn(window.width);
+        const status_column = clock_column + clock_width + 1;
+        const status_end = status_column + window.gwidth(status_text);
+
+        _ = window.printSegment(
+            .{ .text = clock_text, .style = bar_style },
+            .{ .col_offset = clock_column, .wrap = .none },
+        );
+        if (status_end > window.width) return;
+        _ = window.printSegment(
+            .{ .text = status_text, .style = bar_style },
+            .{ .col_offset = status_column, .wrap = .none },
+        );
         const command_window = window.child(.{
             .x_off = edge_padding,
-            .width = end_column -| edge_padding -| edge_padding,
+            .width = clock_column -| edge_padding -| section_spacing,
         });
         if (command_window.printSegment(
             .{ .text = self.command_label, .style = bar_style },
             .{ .wrap = .none },
         ).overflow)
-            command_window.writeCell(command_window.width -| 1, 0, .{
-                .char = .{ .grapheme = "…", .width = 1 },
-                .style = bar_style,
-            });
+            command_window.writeCell(command_window.width -| 1, 0, ellipsis_cell);
+
+        const help_start = status_end + section_spacing;
+        const help_available = window.width -| help_start -| edge_padding;
+        if (help_available > 0) {
+            var help_width: u16 = 0;
+            for (help) |segment| help_width +|= window.gwidth(segment.text);
+            const help_offset: i17 = @as(i17, @intCast(help_available)) - @as(i17, @intCast(help_width));
+            const help_window = window.child(.{ .x_off = help_start, .width = help_available });
+            _ = help_window.child(.{
+                .x_off = help_offset,
+                .width = help_width,
+            }).print(help, .{ .wrap = .none });
+            if (help_offset < 0)
+                help_window.writeCell(0, 0, ellipsis_cell);
+        }
     }
 };
 
