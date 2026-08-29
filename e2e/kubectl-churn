@@ -1,0 +1,81 @@
+#!/usr/bin/env -S uv run --script
+import json
+import os
+import random
+from pathlib import Path
+
+DEPLOYMENTS = "frontend api worker scheduler consumer metrics".split()
+NAMESPACE = "default"
+SEED = os.getenv("KUBECTL_CHURN_SEED", "0")
+STATE = Path("/tmp/kubectl-churn") / f"{os.environ['KUBECTL_CHURN_SESSION']}.json"
+STATE.parent.mkdir(exist_ok=True)
+
+
+def new_pod(deployment, created, nonce):
+    template = random.Random(f"{SEED}:{deployment}").getrandbits(40)
+    suffix = random.Random(f"{SEED}:{deployment}:{nonce}").getrandbits(20)
+    return {
+        "deployment": deployment,
+        "name": f"{deployment}-{template:010x}-{suffix:05x}",
+        "status": "Running" if created < 0 else "Pending",
+        "created": created,
+    }
+
+
+def age(seconds):
+    if seconds < 120:
+        return f"{seconds}s"
+    if seconds < 600:
+        minutes, seconds = divmod(seconds, 60)
+        return f"{minutes}m" + (f"{seconds}s" if seconds else "")
+    if seconds < 3 * 3600:
+        return f"{seconds // 60}m"
+    if seconds < 8 * 3600:
+        hours, seconds = divmod(seconds, 3600)
+        minutes = seconds // 60
+        return f"{hours}h" + (f"{minutes}m" if minutes else "")
+    if seconds < 48 * 3600:
+        return f"{seconds // 3600}h"
+    if seconds < 8 * 86400:
+        days, seconds = divmod(seconds, 86400)
+        hours = seconds // 3600
+        return f"{days}d" + (f"{hours}h" if hours else "")
+    return f"{seconds // 86400}d"
+
+
+if STATE.exists():
+    state = json.loads(STATE.read_text())
+    state["step"] += 1
+    state["pods"] = [p for p in state["pods"] if p["status"] != "Terminating"]
+    for pod in state["pods"]:
+        if pod["status"] == "Pending":
+            pod["status"] = "Running"
+
+    rng = random.Random(f"{SEED}:{state['step']}")
+    for deployment in DEPLOYMENTS:
+        pods = [p for p in state["pods"] if p["deployment"] == deployment]
+        change = rng.choice((-1, 0, 0, 1))
+        if change < 0 and len(pods) > 1:
+            max(pods, key=lambda p: p["created"])["status"] = "Terminating"
+        elif change > 0 and len(pods) < 4:
+            state["pods"].append(new_pod(deployment, state["step"], state["step"]))
+else:
+    rng = random.Random(SEED)
+    state = {"step": 0, "pods": []}
+    for deployment in DEPLOYMENTS:
+        for ordinal in range(rng.randint(1, 2)):
+            created = -rng.randint(3600, 9 * 86400)
+            state["pods"].append(new_pod(deployment, created, f"initial:{ordinal}"))
+
+STATE.write_text(json.dumps(state))
+
+rows = [["NAMESPACE", "NAME", "READY", "STATUS", "RESTARTS", "AGE"]]
+for pod in sorted(state["pods"], key=lambda p: p["name"]):
+    ready = "0/1" if pod["status"] == "Pending" else "1/1"
+    rows.append(
+        [NAMESPACE, pod["name"], ready, pod["status"], "0", age(state["step"] - pod["created"])]
+    )
+
+widths = [max(6, max(len(row[column]) for row in rows) + 3) for column in range(5)]
+for row in rows:
+    print("".join(f"{row[column]:<{widths[column]}}" for column in range(5)) + row[5])
