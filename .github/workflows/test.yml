@@ -11,6 +11,6 @@ permissions:
 
 jobs:
   test:
-    uses: ivoronin/github-workflows/.github/workflows/test.yml@a56926c483d814dd0ab9543491d07ac64fd49b2f # main
+    uses: ivoronin/github-workflows/.github/workflows/test.yml@41258c923b9066bccb4c4b0685013b49130f578a # main
     with:
       language: zig
