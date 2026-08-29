@@ -6,8 +6,11 @@ on:
   pull_request:
     branches: [main]
 
+permissions:
+  contents: read
+
 jobs:
   test:
-    uses: ivoronin/github-workflows/.github/workflows/test.yml@main
+    uses: ivoronin/github-workflows/.github/workflows/test.yml@a56926c483d814dd0ab9543491d07ac64fd49b2f # main
     with:
-      language: go
+      language: zig
