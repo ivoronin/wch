@@ -3,7 +3,7 @@ name: release
 on:
   push:
     tags:
-      - 'v*'
+      - "v*"
 
 permissions:
   contents: write
@@ -11,8 +11,8 @@ permissions:
 
 jobs:
   release:
-    uses: ivoronin/github-workflows/.github/workflows/release.yml@main
+    uses: ivoronin/github-workflows/.github/workflows/release.yml@a56926c483d814dd0ab9543491d07ac64fd49b2f # main
     with:
-      language: go
+      language: zig
       brew: true
     secrets: inherit

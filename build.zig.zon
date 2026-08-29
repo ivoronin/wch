@@ -1,0 +1,29 @@
+.{
+    .name = .wch,
+    .version = "0.0.0",
+    .fingerprint = 0xa34676c985ea5406, // Changing this has security and trust implications.
+    .minimum_zig_version = "0.16.0",
+    .dependencies = .{
+        .dizzy = .{
+            .url = "git+https://github.com/neurocyte/dizzy#4e7c47d882540f6ca6b2d8321451430ba2b6f55d",
+            .hash = "dizzy-1.0.0-q40X4aGRAADKbMiB82-6NSGBDG4Cd4wZxQN4kiYDQu-8",
+        },
+        .clap = .{
+            .url = "git+https://github.com/Hejsil/zig-clap?ref=0.12.0#8d97efa1ee1e575443c7888d5c38e1c3fc145cf5",
+            .hash = "clap-0.12.0-oBajB7foAQDqlSwaSG5g0yq7xGbQARUsBk5T64gAOqP5",
+        },
+        .vaxis = .{
+            .url = "git+https://github.com/rockorager/libvaxis.git#7d4aed7fef1944c4446b8e70d6b71b7229794281",
+            .hash = "vaxis-0.6.0-BWNV_MK5CgCkRxCML4hTf4nb1Ma18mZeT8swSprge7f1",
+        },
+        .zeit = .{
+            .url = "git+https://github.com/rockorager/zeit#b1c1c2fcbc71fd7799a316bbcf0ff88d06d80ccc",
+            .hash = "zeit-0.9.0-5I6bk2m9AgBSMH8-L6rYJkwuQAyhXplnfxnvTSGzVHUR",
+        },
+    },
+    .paths = .{
+        "build.zig",
+        "build.zig.zon",
+        "src",
+    },
+}
