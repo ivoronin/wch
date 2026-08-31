@@ -86,11 +86,6 @@ pub const Model = struct {
         self.viewport.scrollWithKey(key, viewportWindow(window));
     }
 
-    /// Forward mouse input to the viewport.
-    pub fn scrollWithMouse(self: *Model, mouse: vaxis.Mouse) void {
-        self.viewport.scrollWithMouse(mouse);
-    }
-
     /// Resolve selection, refresh output, and draw the viewport and status bar.
     pub fn drawFrame(self: *Model, window: vaxis.Window) std.mem.Allocator.Error!void {
         const viewport_window = viewportWindow(window);

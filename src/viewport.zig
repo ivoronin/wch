@@ -15,8 +15,6 @@ const horizontal_thumb_cell: vaxis.Cell = .{
     .style = .{ .fg = .{ .index = 8 } },
 };
 
-const wheel_step = 3;
-
 const ContentSize = struct { width: u16, height: u16 };
 
 pub const Viewport = struct {
@@ -108,18 +106,6 @@ pub const Viewport = struct {
         } else if (key.matches(vaxis.Key.escape, .{})) {
             // Model consumes Escape in history; live mode uses it to return to top.
             self.top_line = 0;
-        }
-    }
-
-    /// Apply one mouse-wheel scroll command.
-    pub fn scrollWithMouse(self: *Viewport, mouse: vaxis.Mouse) void {
-        switch (mouse.button) {
-            .wheel_up => self.top_line -|= wheel_step,
-            .wheel_down => self.top_line +|= wheel_step,
-            // Horizontal wheel events intentionally move content in the opposite direction.
-            .wheel_left => self.left_column +|= wheel_step,
-            .wheel_right => self.left_column -|= wheel_step,
-            else => return,
         }
     }
 

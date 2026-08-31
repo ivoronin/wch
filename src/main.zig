@@ -7,13 +7,18 @@ const Run = @import("run.zig").Run;
 /// Events from Vaxis and the command watcher.
 const Event = union(enum) {
     key_press: vaxis.Key,
-    mouse: vaxis.Mouse,
     winsize: vaxis.Winsize,
     run_started,
     run_finished: Run,
 };
 
 const EventLoop = vaxis.Loop(Event);
+
+/// Let the terminal translate wheel input into arrow keys without capturing clicks.
+fn setAlternateScroll(writer: *std.Io.Writer, enabled: bool) !void {
+    try writer.writeAll(if (enabled) "\x1b[?1007h" else "\x1b[?1007l");
+    try writer.flush();
+}
 
 /// Run the command on schedule and post lifecycle events until cancellation.
 fn watchCommand(
@@ -66,9 +71,8 @@ pub fn main(process: std.process.Init) !void {
     if (!tui.state.in_band_resize) try event_loop.installResizeHandler();
     defer event_loop.uninstallResizeHandler();
 
-    // Mouse mode supplies wheel events; pixel coordinates are unused.
-    tui.caps.sgr_pixels = false;
-    try tui.setMouseMode(terminal.writer(), true);
+    try setAlternateScroll(terminal.writer(), true);
+    defer setAlternateScroll(terminal.writer(), false) catch {};
 
     // The status bar needs a display string; execution keeps argument boundaries.
     const command_label = try std.mem.join(
@@ -109,7 +113,6 @@ pub fn main(process: std.process.Init) !void {
                 if (key.matches('q', .{})) return;
                 model.handleKeyPress(key, tui.window());
             },
-            .mouse => |mouse| model.scrollWithMouse(mouse),
             .winsize => |window_size| try tui.resize(allocator, terminal.writer(), window_size),
             .run_started => model.run_in_progress = true,
             .run_finished => |run| model.finishRun(run),
