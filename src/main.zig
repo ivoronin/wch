@@ -110,7 +110,7 @@ pub fn main(process: std.process.Init) !void {
         try event_loop.pollEvent();
         while (try event_loop.tryEvent()) |event| switch (event) {
             .key_press => |key| {
-                if (key.matches('q', .{})) return;
+                if (key.matches('q', .{}) or key.matches('c', .{ .ctrl = true })) return;
                 model.handleKeyPress(key, tui.window());
             },
             .winsize => |window_size| try tui.resize(allocator, terminal.writer(), window_size),
