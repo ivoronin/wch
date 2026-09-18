@@ -25,13 +25,14 @@ fn watchCommand(
     allocator: std.mem.Allocator,
     event_loop: *EventLoop,
     command_arguments: []const []const u8,
+    child_environment: *const std.process.Environ.Map,
     run_interval: std.Io.Duration,
 ) void {
     while (true) {
         event_loop.postEvent(.run_started) catch return;
 
         // Cancellation may surface from capture before sleep sees it.
-        if (Run.capture(allocator, event_loop.io, command_arguments)) |captured_run| {
+        if (Run.capture(allocator, event_loop.io, command_arguments, child_environment)) |captured_run| {
             var run = captured_run;
             event_loop.postEvent(.{ .run_finished = run }) catch {
                 run.deinit(allocator);
@@ -52,6 +53,11 @@ pub fn main(process: std.process.Init) !void {
 
     // Parse before entering alternate screen so help and errors remain visible.
     const watch_options = try cli.parse(process.arena.allocator(), io, process.minimal.args);
+
+    // Captured commands use pipes, so request color unless the user set a value.
+    var child_environment = try process.environ_map.clone(allocator);
+    defer child_environment.deinit();
+    if (!child_environment.contains("FORCE_COLOR")) try child_environment.put("FORCE_COLOR", "1");
 
     // Reverse defer order stops the watcher before terminal teardown.
     var terminal: vaxis.Tty = try .init(io, &terminal_buffer);
@@ -91,6 +97,7 @@ pub fn main(process: std.process.Init) !void {
             allocator,
             &event_loop,
             watch_options.command_arguments,
+            &child_environment,
             watch_options.run_interval,
         },
     );

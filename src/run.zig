@@ -12,6 +12,7 @@ pub const Run = struct {
         allocator: std.mem.Allocator,
         io: std.Io,
         command_arguments: []const []const u8,
+        child_environment: *const std.process.Environ.Map,
     ) !Run {
         // A fixed shell interprets one command string independently of `$SHELL`.
         const process_arguments: []const []const u8 = if (command_arguments.len == 1)
@@ -19,7 +20,10 @@ pub const Run = struct {
         else
             command_arguments;
 
-        if (std.process.run(allocator, io, .{ .argv = process_arguments })) |process_result| {
+        if (std.process.run(allocator, io, .{
+            .argv = process_arguments,
+            .environ_map = child_environment,
+        })) |process_result| {
             const captured_output = if (process_result.stderr.len == 0) stdout_only: {
                 allocator.free(process_result.stderr);
                 break :stdout_only process_result.stdout;
