@@ -72,7 +72,7 @@ pub fn compareLines(
     return compareParts(arena, before_lines, after_lines, before_keys, after_keys);
 }
 
-/// Diff words while keeping delimiter runs as parts.
+/// Diff word and whitespace runs, with punctuation as separate parts.
 pub fn compareWords(
     arena: std.mem.Allocator,
     before_line: []const u8,
@@ -108,13 +108,15 @@ fn splitLines(arena: std.mem.Allocator, output: []const u8) ![]const []const u8 
     return lines.items;
 }
 
-/// Split one line into alternating delimiter and non-delimiter runs.
+/// Split words and whitespace into runs, keeping each punctuation delimiter separate.
 fn splitWords(arena: std.mem.Allocator, line: []const u8) ![]const []const u8 {
     var parts: std.ArrayList([]const u8) = .empty;
 
     var part_start: usize = 0;
     for (line, 0..) |byte, byte_index| {
-        if (word_delimiters.isSet(byte) == word_delimiters.isSet(line[part_start])) continue;
+        if (byte_index == part_start) continue;
+        if (std.ascii.isWhitespace(byte) and std.ascii.isWhitespace(line[part_start])) continue;
+        if (!word_delimiters.isSet(byte) and !word_delimiters.isSet(line[part_start])) continue;
         try parts.append(arena, line[part_start..byte_index]);
         part_start = byte_index;
     }
@@ -302,14 +304,14 @@ test "falls back to whole lines without a key column" {
     try std.testing.expectEqual(@as(usize, 2), inserted_lines);
 }
 
-test "diffs words and keeps delimiter runs" {
+test "diffs words and keeps punctuation separate from whitespace" {
     var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
     defer arena.deinit();
 
     const word_changes = try compareWords(arena.allocator(), "cpu: 12", "cpu: 13");
     try std.testing.expectEqualDeep(&[_]dizzy.Edit{
-        .{ .kind = .equal, .range = .{ .start = 0, .end = 2 } },
-        .{ .kind = .delete, .range = .{ .start = 2, .end = 3 } },
-        .{ .kind = .insert, .range = .{ .start = 2, .end = 3 } },
+        .{ .kind = .equal, .range = .{ .start = 0, .end = 3 } },
+        .{ .kind = .delete, .range = .{ .start = 3, .end = 4 } },
+        .{ .kind = .insert, .range = .{ .start = 3, .end = 4 } },
     }, word_changes.edits);
 }

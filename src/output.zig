@@ -8,6 +8,29 @@ const ansi = @import("ansi.zig");
 const added_style: vaxis.Style = .{ .fg = .{ .index = 2 } };
 const DisplayLine = []const vaxis.Segment;
 
+test "padding and punctuation edits preserve unchanged text" {
+    var output: Output = .init(std.testing.allocator);
+    defer output.deinit();
+
+    const Case = struct { before: []const u8, after: []const u8, highlighted: []const u8 };
+    for ([_]Case{
+        .{ .before = "node (zone)  Ready", .after = "node (zone)   Ready", .highlighted = "   " },
+        .{ .before = "node (zone)   Ready", .after = "node (zone)  Ready", .highlighted = "  " },
+        .{ .before = "node (zone)] Ready", .after = "node (zone),] Ready", .highlighted = "," },
+        .{ .before = "node (zone)) Ready", .after = "node (zone))) Ready", .highlighted = ")" },
+        .{ .before = "node (漢字)  old", .after = "node (漢字)   new", .highlighted = "   new" },
+    }) |case| {
+        _ = try output.replaceText(.unicode, case.before, case.after, null);
+        var highlighted: std.ArrayList(u8) = .empty;
+        defer highlighted.deinit(std.testing.allocator);
+        for (output.display_lines[0]) |segment| {
+            if (segment.style.fg.eql(added_style.fg))
+                try highlighted.appendSlice(std.testing.allocator, segment.text);
+        }
+        try std.testing.expectEqualStrings(case.highlighted, highlighted.items);
+    }
+}
+
 pub const Output = struct {
     normalized_output: ?[]const u8 = null,
     display_lines: []const DisplayLine = &.{},
