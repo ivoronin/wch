@@ -2,23 +2,23 @@
     .name = .wch,
     .version = "0.0.0",
     .fingerprint = 0xa34676c985ea5406, // Changing this has security and trust implications.
-    .minimum_zig_version = "0.16.0",
+    .minimum_zig_version = "0.17.0",
     .dependencies = .{
         .dizzy = .{
-            .url = "git+https://github.com/neurocyte/dizzy#4e7c47d882540f6ca6b2d8321451430ba2b6f55d",
-            .hash = "dizzy-1.0.0-q40X4aGRAADKbMiB82-6NSGBDG4Cd4wZxQN4kiYDQu-8",
+            .url = "git+https://github.com/neurocyte/dizzy#1ab5d293050a6ed9dfa02b44d0820e84a32f20b2",
+            .hash = "dizzy-1.0.0-q40X4WiRAAAOV7thjG9ZJrb9GsXSGAcaUr6RHoHgQ2Kb",
         },
         .clap = .{
-            .url = "git+https://github.com/Hejsil/zig-clap?ref=0.12.0#8d97efa1ee1e575443c7888d5c38e1c3fc145cf5",
-            .hash = "clap-0.12.0-oBajB7foAQDqlSwaSG5g0yq7xGbQARUsBk5T64gAOqP5",
+            .url = "git+https://github.com/Hejsil/zig-clap#05faf3905e8548f5cc269a8836e154065e70128d",
+            .hash = "clap-0.12.0-oBajB4XpAQCF1WRKnD5KOKPsnwwT_NNdAJ7Ww3irYJac",
         },
         .vaxis = .{
-            .url = "git+https://github.com/rockorager/libvaxis.git#7d4aed7fef1944c4446b8e70d6b71b7229794281",
-            .hash = "vaxis-0.6.0-BWNV_MK5CgCkRxCML4hTf4nb1Ma18mZeT8swSprge7f1",
+            .url = "git+https://github.com/rockorager/libvaxis#6fd944a27fb3d6f596e981076381a3131f2448b4",
+            .hash = "vaxis-0.6.0-BWNV_MafDAAEzkVUvrW9NFUqnnMUoeHqrs2mecnD6D7w",
         },
         .zeit = .{
-            .url = "git+https://github.com/rockorager/zeit#b1c1c2fcbc71fd7799a316bbcf0ff88d06d80ccc",
-            .hash = "zeit-0.9.0-5I6bk2m9AgBSMH8-L6rYJkwuQAyhXplnfxnvTSGzVHUR",
+            .url = "git+https://github.com/rockorager/zeit#06bb7b462b4218770fb5438ebe6b0c0c5ef18888",
+            .hash = "zeit-0.10.0-5I6bkxS-AgAaI3lI3RsXsWnPw7sMCqJKoFnSB8_QRAoo",
         },
     },
     .paths = .{

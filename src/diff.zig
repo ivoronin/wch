@@ -4,7 +4,7 @@ const std = @import("std");
 const dizzy = @import("dizzy");
 
 const word_delimiters = delimiters: {
-    var delimiter_set = std.StaticBitSet(256).initEmpty();
+    var delimiter_set: std.bit_set.Static(256) = .empty;
     for (" \t\r\n.,:;/|()[]") |delimiter| delimiter_set.set(delimiter);
     break :delimiters delimiter_set;
 };

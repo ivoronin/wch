@@ -49,8 +49,7 @@ pub const Run = struct {
 
             return .{
                 .completed_at = .now(io, .real),
-                .output = try std.fmt.allocPrint(
-                    allocator,
+                .output = try allocator.print(
                     "Error running command: {any}",
                     .{launch_error},
                 ),

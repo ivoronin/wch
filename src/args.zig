@@ -52,7 +52,7 @@ pub fn parse(
         std.process.exit(1);
     };
     if (parsed_arguments.args.version != 0) {
-        const version_text = try std.fmt.allocPrint(arena, "wch {s}\n", .{build_metadata.version});
+        const version_text = try arena.print("wch {s}\n", .{build_metadata.version});
         try std.Io.File.stdout().writeStreamingAll(io, version_text);
         std.process.exit(0);
     }

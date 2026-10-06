@@ -197,7 +197,7 @@ fn scrollbarThumb(
 
 test "positions and clamps stay inside the content" {
     const line_segments = [_]vaxis.Segment{.{ .text = "x" }};
-    const display_lines = [_]DisplayLine{&line_segments} ** 30;
+    const display_lines: [30]DisplayLine = @splat(&line_segments);
 
     var view = try vaxis.widgets.View.init(std.testing.allocator, .{ .width = 10, .height = 8 });
     defer view.deinit();
@@ -241,8 +241,8 @@ test "drawing clamps content wider than a Vaxis child" {
     defer view.deinit();
     const window = view.window();
 
-    const wide_text = "x" ** 66_000;
-    const line_segments = [_]vaxis.Segment{.{ .text = wide_text }};
+    const wide_text: [66_000]u8 = @splat('x');
+    const line_segments = [_]vaxis.Segment{.{ .text = &wide_text }};
     const display_lines = [_]DisplayLine{&line_segments};
 
     var viewport: Viewport = .{};

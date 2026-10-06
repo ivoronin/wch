@@ -48,7 +48,7 @@ pub fn build(build_system: *std.Build) void {
     const run_command = build_system.addRunArtifact(executable);
     run_command.step.dependOn(build_system.getInstallStep());
     // `zig build run -- arg1 arg2`.
-    if (build_system.args) |application_arguments| run_command.addArgs(application_arguments);
+    run_command.addPassthruArgs();
 
     build_system.step("run", "Run the app").dependOn(&run_command.step);
 

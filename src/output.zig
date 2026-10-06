@@ -288,8 +288,7 @@ test "color-only changes refresh styles without diff highlighting" {
         "\x1b[38:2:1:2:3:4:5m",
         "\x1b[4:1:99m",
     }) |malformed| {
-        const after = try std.fmt.allocPrint(
-            std.testing.allocator,
+        const after = try std.testing.allocator.print(
             "\x1b[2K\x1b[1;38;2;12;34;56mRunning\n\x1b[38;5;196mstill\x1b[m{s} plain",
             .{malformed},
         );
